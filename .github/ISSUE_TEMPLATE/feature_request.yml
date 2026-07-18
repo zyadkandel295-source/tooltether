@@ -1,0 +1,13 @@
+name: Feature request
+description: Propose a scoped capability
+body:
+  - type: textarea
+    attributes: {label: Problem, description: "What concrete user problem is unsolved?"}
+    validations: {required: true}
+  - type: textarea
+    attributes: {label: Proposed contract and alternatives}
+    validations: {required: true}
+  - type: textarea
+    attributes: {label: Security and compatibility impact}
+    validations: {required: true}
+

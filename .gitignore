@@ -1,0 +1,15 @@
+.venv/
+.tooltether/
+dist/
+build/
+site/
+.coverage
+htmlcov/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+

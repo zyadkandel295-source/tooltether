@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use ToolTether, cite this software."
+title: "ToolTether"
+type: software
+version: 0.1.0
+date-released: 2026-07-17
+license: Apache-2.0
+authors:
+  - name: "ToolTether contributors"

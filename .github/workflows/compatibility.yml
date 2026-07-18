@@ -1,0 +1,22 @@
+name: Optional compatibility
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  adapter:
+    strategy:
+      fail-fast: false
+      matrix:
+        extra: [mcp, langchain, crewai, autogen, smolagents, otel]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13"}
+      - run: python -m pip install -e ".[dev,${{ matrix.extra }}]"
+      - run: python -m pytest -q
+      - run: python -m pip check
+

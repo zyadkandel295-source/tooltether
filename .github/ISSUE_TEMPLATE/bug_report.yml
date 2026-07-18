@@ -1,0 +1,15 @@
+name: Bug report
+description: Report a reproducible ToolTether defect
+body:
+  - type: textarea
+    attributes: {label: Reproduction, description: "Minimal sanitized code and exact command"}
+    validations: {required: true}
+  - type: input
+    attributes: {label: Versions, description: "ToolTether, Python, OS, optional SDK"}
+    validations: {required: true}
+  - type: textarea
+    attributes: {label: Expected and actual behavior}
+    validations: {required: true}
+  - type: markdown
+    attributes: {value: "Do not report security vulnerabilities or credentials here; follow SECURITY.md."}
+
