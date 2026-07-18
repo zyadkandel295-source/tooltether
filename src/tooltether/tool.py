@@ -32,6 +32,12 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
+def _callable_implementation(function: Callable[..., Any]) -> Callable[..., Any]:
+    if inspect.isroutine(function) or inspect.isclass(function) or inspect.ismodule(function):
+        return function
+    return type(function).__call__ if callable(function) else function
+
+
 class Tool(Generic[P, R]):
     """A callable plus its framework-neutral execution contract."""
 
@@ -59,11 +65,11 @@ class Tool(Generic[P, R]):
 
     @property
     def is_async(self) -> bool:
-        return inspect.iscoroutinefunction(self.function)
+        return inspect.iscoroutinefunction(_callable_implementation(self.function))
 
     @property
     def is_async_generator(self) -> bool:
-        return inspect.isasyncgenfunction(self.function)
+        return inspect.isasyncgenfunction(_callable_implementation(self.function))
 
     @property
     def fingerprint(self) -> ToolFingerprint:
@@ -156,11 +162,12 @@ def _build_tool(
         raise ToolDefinitionError(f"Tool '{tool_name}' requires a description or docstring")
     input_model = create_input_model(function, tool_name)
     output_adapter = create_output_adapter(function, tool_name)
+    implementation = _callable_implementation(function)
     side_effect_value = SideEffects(side_effects)
     capability_model = capabilities or ToolCapabilities(
         capabilities=frozenset(permissions or ()),
         external_access=external_access,
-        streaming=inspect.isasyncgenfunction(function),
+        streaming=inspect.isasyncgenfunction(implementation),
     )
     risk_model = risk or ToolRisk(
         level=RiskLevel.HIGH

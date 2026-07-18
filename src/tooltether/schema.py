@@ -15,11 +15,28 @@ def _model_name(tool_name: str) -> str:
     return "".join(part.capitalize() for part in tool_name.replace("-", "_").split("_")) + "Input"
 
 
+def _annotation_target(function: Callable[..., Any]) -> Any:
+    if inspect.isroutine(function) or inspect.isclass(function) or inspect.ismodule(function):
+        return function
+    if callable(function):
+        return type(function).__call__
+    return function
+
+
+def _type_hints(function: Callable[..., Any], tool_name: str) -> dict[str, Any]:
+    try:
+        return get_type_hints(_annotation_target(function), include_extras=True)
+    except (TypeError, ValueError, NameError) as exc:
+        raise ToolDefinitionError(f"Cannot inspect callable for tool '{tool_name}': {exc}") from exc
+
+
 def create_input_model(function: Callable[..., Any], tool_name: str) -> type[BaseModel]:
     try:
         signature = inspect.signature(function)
-        hints = get_type_hints(function, include_extras=True)
-    except (TypeError, ValueError, NameError) as exc:
+        hints = _type_hints(function, tool_name)
+    except ToolDefinitionError:
+        raise
+    except (TypeError, ValueError) as exc:
         raise ToolDefinitionError(f"Cannot inspect callable for tool '{tool_name}': {exc}") from exc
     fields: dict[str, tuple[Any, Any]] = {}
     for name, parameter in signature.parameters.items():
@@ -57,9 +74,11 @@ def create_input_model(function: Callable[..., Any], tool_name: str) -> type[Bas
 
 def create_output_adapter(function: Callable[..., Any], tool_name: str) -> TypeAdapter[Any]:
     try:
-        hints = get_type_hints(function, include_extras=True)
+        hints = _type_hints(function, tool_name)
         annotation = hints.get("return", inspect.signature(function).return_annotation)
-    except (TypeError, ValueError, NameError) as exc:
+    except ToolDefinitionError:
+        raise
+    except (TypeError, ValueError) as exc:
         raise ToolDefinitionError(f"Cannot inspect output type for '{tool_name}': {exc}") from exc
     if annotation in (inspect.Signature.empty, None):
         raise ToolDefinitionError(f"Tool '{tool_name}' must have a return type annotation")

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Literal, TypedDict
+from typing import Annotated, Literal, TypedDict
 
 import pytest
 from pydantic import BaseModel
@@ -158,7 +158,61 @@ def test_callable_instance() -> None:
         def __call__(self, value: int) -> int:
             return value + 1
 
-    assert Runtime().run(ensure_tool(Increment()), {"value": 4}).value == 5
+    wrapped = ensure_tool(Increment())
+    assert wrapped.spec.input_schema["properties"] == {
+        "value": {"title": "Value", "type": "integer"}
+    }
+    assert Runtime().run(wrapped, {"value": 4}).value == 5
+
+
+def test_callable_instance_without_annotations_is_rejected() -> None:
+    class UntypedIncrement:
+        """Increment a number without annotations."""
+
+        def __call__(self, value):
+            return value + 1
+
+    with pytest.raises(ToolDefinitionError, match="type annotation"):
+        ensure_tool(UntypedIncrement())
+
+
+@pytest.mark.asyncio
+async def test_async_callable_instance() -> None:
+    class AsyncIncrement:
+        """Increment a number asynchronously."""
+
+        async def __call__(self, value: int) -> int:
+            return value + 1
+
+    assert (await Runtime().arun(ensure_tool(AsyncIncrement()), {"value": 4})).value == 5
+
+
+def test_callable_instance_with_annotated_and_optional_inputs() -> None:
+    class Normalize:
+        """Normalize an optional string with metadata."""
+
+        def __call__(self, value: Annotated[str | None, "optional display name"]) -> str:
+            return value or "missing"
+
+    wrapped = ensure_tool(Normalize())
+    assert Runtime().run(wrapped, {"value": "x"}).value == "x"
+    assert Runtime().run(wrapped, {"value": None}).value == "missing"
+    schema = wrapped.spec.input_schema["properties"]["value"]
+    assert schema["anyOf"] == [{"type": "string"}, {"type": "null"}]
+
+
+def test_normal_function_annotations_remain_unchanged() -> None:
+    @tool
+    def echo(value: Annotated[int | None, "normal function metadata"]) -> int | None:
+        """Echo an optionally missing integer."""
+        return value
+
+    assert Runtime().run(echo, {"value": 7}).value == 7
+    assert Runtime().run(echo, {"value": None}).value is None
+    assert echo.spec.input_schema["properties"]["value"]["anyOf"] == [
+        {"type": "integer"},
+        {"type": "null"},
+    ]
 
 
 def test_direct_call_and_custom_policy_models() -> None:
