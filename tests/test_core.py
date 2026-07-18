@@ -128,6 +128,19 @@ def test_nested_schema_features() -> None:
     assert result.value == Output(total=6)
 
 
+def test_stdlib_typeddict_annotations_remain_supported_on_python_311() -> None:
+    @tool
+    def render(details: Details | None) -> str:
+        """Render typed dictionary details."""
+        return details["label"] if details is not None else "missing"
+
+    assert Runtime().run(render, {"details": {"label": "x", "enabled": True}}).value == "x"
+    assert Runtime().run(render, {"details": None}).value == "missing"
+    schema = render.spec.input_schema["properties"]["details"]
+    assert schema["anyOf"][0]["$ref"] == "#/$defs/Details"
+    assert schema["anyOf"][1]["type"] == "null"
+
+
 def test_fingerprint_changes_only_with_contract() -> None:
     @tool(version="1.0.0")
     def first(value: int) -> int:

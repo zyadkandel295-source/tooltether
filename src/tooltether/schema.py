@@ -3,16 +3,81 @@
 from __future__ import annotations
 
 import inspect
+import sys
+import types
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
-from typing import Any, cast, get_args, get_origin, get_type_hints
+from functools import reduce
+from operator import or_
+from typing import Annotated, Any, Union, cast, get_args, get_origin, get_type_hints
 
 from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError, create_model
+from typing_extensions import TypedDict as ExtensionsTypedDict
 
 from .errors import ToolDefinitionError, ToolValidationError
+
+_NEEDS_TYPED_DICT_COMPAT = sys.version_info < (3, 12)
+_TYPED_DICT_CACHE: dict[type[Any], type[Any]] = {}
 
 
 def _model_name(tool_name: str) -> str:
     return "".join(part.capitalize() for part in tool_name.replace("-", "_").split("_")) + "Input"
+
+
+def _is_stdlib_typed_dict_class(annotation: Any) -> bool:
+    return (
+        inspect.isclass(annotation)
+        and type(annotation).__module__ == "typing"
+        and hasattr(annotation, "__annotations__")
+        and hasattr(annotation, "__required_keys__")
+        and hasattr(annotation, "__optional_keys__")
+    )
+
+
+def _compat_typed_dict(annotation: type[Any]) -> type[Any]:
+    cached = _TYPED_DICT_CACHE.get(annotation)
+    if cached is not None:
+        return cached
+
+    typed_dict_factory = cast(Any, ExtensionsTypedDict)
+    typed_dict = cast(
+        type[Any],
+        typed_dict_factory(
+            annotation.__name__,
+            dict(getattr(annotation, "__annotations__", {})),
+            total=bool(getattr(annotation, "__total__", True)),
+        ),
+    )
+    typed_dict.__module__ = annotation.__module__
+    typed_dict.__doc__ = annotation.__doc__
+    _TYPED_DICT_CACHE[annotation] = typed_dict
+    return typed_dict
+
+
+def _normalize_annotation(annotation: Any) -> Any:
+    if _NEEDS_TYPED_DICT_COMPAT and _is_stdlib_typed_dict_class(annotation):
+        return _compat_typed_dict(cast(type[Any], annotation))
+
+    origin = get_origin(annotation)
+    if origin is None:
+        return annotation
+
+    args = get_args(annotation)
+    if not args:
+        return annotation
+
+    normalized_args = tuple(_normalize_annotation(arg) for arg in args)
+    if normalized_args == args:
+        return annotation
+    if origin is Annotated:
+        return Annotated.__class_getitem__((normalized_args[0], *normalized_args[1:]))
+    if origin in {types.UnionType, Union}:
+        return reduce(or_, normalized_args[1:], normalized_args[0])
+    if hasattr(annotation, "copy_with"):
+        return annotation.copy_with(normalized_args)
+    try:
+        return origin[normalized_args[0] if len(normalized_args) == 1 else normalized_args]
+    except TypeError:
+        return annotation
 
 
 def _annotation_target(function: Callable[..., Any]) -> Any:
@@ -25,7 +90,12 @@ def _annotation_target(function: Callable[..., Any]) -> Any:
 
 def _type_hints(function: Callable[..., Any], tool_name: str) -> dict[str, Any]:
     try:
-        return get_type_hints(_annotation_target(function), include_extras=True)
+        return {
+            name: _normalize_annotation(annotation)
+            for name, annotation in get_type_hints(
+                _annotation_target(function), include_extras=True
+            ).items()
+        }
     except (TypeError, ValueError, NameError) as exc:
         raise ToolDefinitionError(f"Cannot inspect callable for tool '{tool_name}': {exc}") from exc
 

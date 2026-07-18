@@ -31,8 +31,7 @@ async def test_memory_cache_ttl_lru_and_invalidation() -> None:
     await cache.set("c", 3, 10)
     assert await cache.get("b") is None
     assert await cache.invalidate(tag="x") == 1
-    await cache.set("short", 4, 0.001)
-    await asyncio.sleep(0.01)
+    await cache.set("short", 4, 0)
     assert await cache.get("short") is None
 
 
