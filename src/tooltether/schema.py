@@ -69,7 +69,7 @@ def _normalize_annotation(annotation: Any) -> Any:
     if normalized_args == args:
         return annotation
     if origin is Annotated:
-        return Annotated.__class_getitem__((normalized_args[0], *normalized_args[1:]))
+        return Annotated[normalized_args]
     if origin in {types.UnionType, Union}:
         return reduce(or_, normalized_args[1:], normalized_args[0])
     if hasattr(annotation, "copy_with"):
