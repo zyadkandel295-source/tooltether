@@ -19,7 +19,7 @@ def _annotation_target(function: Callable[..., Any]) -> Any:
     if inspect.isroutine(function) or inspect.isclass(function) or inspect.ismodule(function):
         return function
     if callable(function):
-        return type(function).__call__
+        return cast(Callable[..., Any], object.__getattribute__(function, "__call__"))
     return function
 
 

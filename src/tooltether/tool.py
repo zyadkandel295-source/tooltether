@@ -35,7 +35,9 @@ R = TypeVar("R")
 def _callable_implementation(function: Callable[..., Any]) -> Callable[..., Any]:
     if inspect.isroutine(function) or inspect.isclass(function) or inspect.ismodule(function):
         return function
-    return type(function).__call__ if callable(function) else function
+    if callable(function):
+        return cast(Callable[..., Any], object.__getattribute__(function, "__call__"))
+    return function
 
 
 class Tool(Generic[P, R]):
