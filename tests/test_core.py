@@ -37,6 +37,34 @@ class Item:
     value: int
 
 
+class IncrementCallable:
+    """Increment a number."""
+
+    def __call__(self, value: int) -> int:
+        return value + 1
+
+
+class UntypedIncrementCallable:
+    """Increment a number without annotations."""
+
+    def __call__(self, value):
+        return value + 1
+
+
+class AsyncIncrementCallable:
+    """Increment a number asynchronously."""
+
+    async def __call__(self, value: int) -> int:
+        return value + 1
+
+
+class NormalizeOptionalCallable:
+    """Normalize an optional string with metadata."""
+
+    def __call__(self, value: Annotated[str | None, "optional display name"]) -> str:
+        return value or "missing"
+
+
 def test_basic_tool_and_manifest_are_deterministic() -> None:
     @tool
     def add(a: int, b: int) -> int:
@@ -152,13 +180,7 @@ def test_class_based_tool() -> None:
 
 
 def test_callable_instance() -> None:
-    class Increment:
-        """Increment a number."""
-
-        def __call__(self, value: int) -> int:
-            return value + 1
-
-    wrapped = ensure_tool(Increment())
+    wrapped = ensure_tool(IncrementCallable())
     assert wrapped.spec.input_schema["properties"] == {
         "value": {"title": "Value", "type": "integer"}
     }
@@ -166,35 +188,17 @@ def test_callable_instance() -> None:
 
 
 def test_callable_instance_without_annotations_is_rejected() -> None:
-    class UntypedIncrement:
-        """Increment a number without annotations."""
-
-        def __call__(self, value):
-            return value + 1
-
     with pytest.raises(ToolDefinitionError, match="type annotation"):
-        ensure_tool(UntypedIncrement())
+        ensure_tool(UntypedIncrementCallable())
 
 
 @pytest.mark.asyncio
 async def test_async_callable_instance() -> None:
-    class AsyncIncrement:
-        """Increment a number asynchronously."""
-
-        async def __call__(self, value: int) -> int:
-            return value + 1
-
-    assert (await Runtime().arun(ensure_tool(AsyncIncrement()), {"value": 4})).value == 5
+    assert (await Runtime().arun(ensure_tool(AsyncIncrementCallable()), {"value": 4})).value == 5
 
 
 def test_callable_instance_with_annotated_and_optional_inputs() -> None:
-    class Normalize:
-        """Normalize an optional string with metadata."""
-
-        def __call__(self, value: Annotated[str | None, "optional display name"]) -> str:
-            return value or "missing"
-
-    wrapped = ensure_tool(Normalize())
+    wrapped = ensure_tool(NormalizeOptionalCallable())
     assert Runtime().run(wrapped, {"value": "x"}).value == "x"
     assert Runtime().run(wrapped, {"value": None}).value == "missing"
     schema = wrapped.spec.input_schema["properties"]["value"]
