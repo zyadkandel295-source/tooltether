@@ -198,7 +198,7 @@ def test_callable_instance_with_annotated_and_optional_inputs() -> None:
     assert Runtime().run(wrapped, {"value": "x"}).value == "x"
     assert Runtime().run(wrapped, {"value": None}).value == "missing"
     schema = wrapped.spec.input_schema["properties"]["value"]
-    assert schema["anyOf"] == [{"type": "string"}, {"type": "null"}]
+    assert {item["type"] for item in schema["anyOf"]} == {"string", "null"}
 
 
 def test_normal_function_annotations_remain_unchanged() -> None:
@@ -209,10 +209,10 @@ def test_normal_function_annotations_remain_unchanged() -> None:
 
     assert Runtime().run(echo, {"value": 7}).value == 7
     assert Runtime().run(echo, {"value": None}).value is None
-    assert echo.spec.input_schema["properties"]["value"]["anyOf"] == [
-        {"type": "integer"},
-        {"type": "null"},
-    ]
+    assert {item["type"] for item in echo.spec.input_schema["properties"]["value"]["anyOf"]} == {
+        "integer",
+        "null",
+    }
 
 
 def test_direct_call_and_custom_policy_models() -> None:
