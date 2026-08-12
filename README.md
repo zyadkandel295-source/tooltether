@@ -117,6 +117,21 @@ The core imports no provider or agent-framework SDK. Adapter imports are lazy an
 - Legal or regulatory compliance by itself.
 - A hosted dashboard, agent framework, model loop, or MCP protocol replacement.
 
+## Performance and benchmarks
+
+ToolTether adds a median runtime overhead of **~4.44 ms** (in-memory storage) and **~5.29 ms** (disk storage with WAL mode and `PRAGMA synchronous = NORMAL`).
+
+Run the official benchmark suite:
+
+```bash
+python benchmarks/runtime_overhead.py
+python benchmarks/payload_scaling.py
+python benchmarks/concurrency.py
+python benchmarks/sustained_load.py
+python benchmarks/cache.py
+python benchmarks/storage.py
+```
+
 ## Documentation and development
 
 See the [full guide](docs/index.md), [threat model](docs/threat-model.md), [compatibility matrix](docs/compatibility.md), and [contribution guide](CONTRIBUTING.md).
@@ -127,6 +142,7 @@ ruff check .
 ruff format --check .
 mypy src
 python -m build
+python -m twine check dist/*
 ```
 
 The roadmap prioritizes real installed-SDK compatibility matrices, distributed backends, and deeper policy property tests. See [ROADMAP.md](ROADMAP.md).

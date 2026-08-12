@@ -72,6 +72,9 @@ class SQLiteStorage:
     def _migrate(self) -> None:
         try:
             with self._lock, self._connection:
+                if self.path != ":memory:":
+                    self._connection.execute("PRAGMA journal_mode = WAL;")
+                    self._connection.execute("PRAGMA synchronous = NORMAL;")
                 self._connection.executescript(_MIGRATION)
                 row = self._connection.execute(
                     "SELECT version FROM schema_version LIMIT 1"
@@ -168,6 +171,47 @@ class SQLiteStorage:
                 return False
             previous_hash = row["record_hash"]
         return True
+
+    async def write_telemetry_and_audit(
+        self, telemetry: TelemetryRecord, audit: AuditRecord, *, hash_chain: bool = True
+    ) -> AuditRecord:
+        return await asyncio.to_thread(
+            self._write_telemetry_and_audit, telemetry, audit, hash_chain
+        )
+
+    def _write_telemetry_and_audit(
+        self, telemetry: TelemetryRecord, audit: AuditRecord, hash_chain: bool
+    ) -> AuditRecord:
+        self._ensure_open()
+        with self._lock, self._connection:
+            self._connection.execute(
+                "INSERT INTO telemetry VALUES (?, ?, ?, ?, ?)",
+                (
+                    telemetry.execution_id,
+                    telemetry.tool_fingerprint,
+                    telemetry.environment,
+                    telemetry.timestamp.isoformat(),
+                    telemetry.model_dump_json(),
+                ),
+            )
+            previous = self._connection.execute(
+                "SELECT record_hash FROM audit ORDER BY sequence DESC LIMIT 1"
+            ).fetchone()
+            previous_hash = previous["record_hash"] if previous and hash_chain else None
+            base = audit.model_copy(update={"previous_hash": previous_hash, "record_hash": None})
+            payload = base.model_dump_json(exclude_none=True)
+            record_hash = (
+                hashlib.sha256(f"{previous_hash or ''}{payload}".encode()).hexdigest()
+                if hash_chain
+                else None
+            )
+            final = base.model_copy(update={"record_hash": record_hash})
+            cursor = self._connection.execute(
+                "INSERT INTO audit(execution_id, record_json, previous_hash, record_hash) "
+                "VALUES (?, ?, ?, ?)",
+                (audit.execution_id, final.model_dump_json(), previous_hash, record_hash),
+            )
+            return final.model_copy(update={"sequence": cursor.lastrowid})
 
     async def add_telemetry(self, record: TelemetryRecord) -> None:
         await asyncio.to_thread(self._add_telemetry, record)

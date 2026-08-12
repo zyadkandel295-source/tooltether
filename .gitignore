@@ -1,4 +1,8 @@
 .venv/
+.venv311/
+.tmp_*/
+.tools/
+.pytest_tmp/
 .tooltether/
 dist/
 build/
@@ -11,5 +15,7 @@ htmlcov/
 __pycache__/
 *.py[cod]
 *.egg-info/
+*.db
+*.exe
+*.html
 .env
-

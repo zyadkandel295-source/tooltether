@@ -21,6 +21,14 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = ["pydantic>=2.12,<3"]
+keywords = ["ai", "tools", "mcp", "agent", "llm", "runtime", "langchain", "openai", "anthropic", "governance"]
+
+[project.urls]
+Homepage = "https://github.com/zyadkandel295-source/tooltether"
+Documentation = "https://github.com/zyadkandel295-source/tooltether#readme"
+Repository = "https://github.com/zyadkandel295-source/tooltether"
+Changelog = "https://github.com/zyadkandel295-source/tooltether/blob/main/CHANGELOG.md"
+Issues = "https://github.com/zyadkandel295-source/tooltether/issues"
 
 [project.optional-dependencies]
 mcp = ["mcp>=1.25,<2"]
@@ -91,9 +99,10 @@ exclude = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-ra --strict-markers --strict-config"
+addopts = "-ra --strict-markers --strict-config --basetemp=.pytest_tmp"
 testpaths = ["tests"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 branch = true

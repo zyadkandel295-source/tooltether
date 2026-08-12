@@ -335,8 +335,9 @@ class Runtime:
                 cache_hit=cache_hit,
             )
             try:
-                await self.storage.add_telemetry(telemetry)
-                await self.storage.append_audit(audit, hash_chain=self.config.audit_hash_chain)
+                await self.storage.write_telemetry_and_audit(
+                    telemetry, audit, hash_chain=self.config.audit_hash_chain
+                )
             except StorageError:
                 if self.config.strict_audit:
                     raise
