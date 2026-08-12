@@ -24,10 +24,12 @@ The name is a working pre-publication name. PyPI and GitHub searches found no ex
 ```python
 from tooltether import Runtime, tool
 
+
 @tool(cache=True, idempotent=True)
 def add(a: int, b: int) -> int:
     """Add two integers."""
     return a + b
+
 
 runtime = Runtime()
 result = runtime.run(add, {"a": 2, "b": 3})
@@ -41,6 +43,7 @@ Async handlers run natively:
 async def lookup(query: str) -> list[str]:
     """Look up approved records."""
     return [query]
+
 
 result = await runtime.arun(lookup, {"query": "safety"})
 ```

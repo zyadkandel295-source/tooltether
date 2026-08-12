@@ -11,10 +11,12 @@ Install `tooltether` for core functionality or an explicit extra such as `toolte
 ```python
 from tooltether import Runtime, tool
 
+
 @tool
 def add(a: int, b: int) -> int:
     """Add two integers."""
     return a + b
+
 
 assert Runtime().run(add, {"a": 2, "b": 3}).value == 5
 ```
