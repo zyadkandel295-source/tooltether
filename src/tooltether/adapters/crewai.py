@@ -5,14 +5,16 @@ from __future__ import annotations
 from typing import Any
 
 from ..errors import MissingExtraError
-from .base import BaseAdapter
+from .base import AdapterMaturity, BaseAdapter
 
 
 class CrewAIAdapter(BaseAdapter):
     adapter_name = "crewai"
     framework_name = "CrewAI"
     supported_framework_versions = "crewai >=1.7,<2"
-    stability = "experimental"
+    maturity = AdapterMaturity.EXPERIMENTAL
+    recommended = False
+    limitations = ("Upstream custom-tool lifecycle APIs may change.",)
 
     def export_tool(self, tool: Any, runtime: Any | None = None) -> Any:
         if runtime is None:

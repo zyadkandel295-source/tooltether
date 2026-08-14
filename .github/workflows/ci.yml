@@ -18,10 +18,20 @@ jobs:
       - run: mypy src
       - run: python -m pytest --cov=tooltether
       - run: mkdocs build --strict
-      - run: python -m build
-      - run: python -m twine check dist/*
       - run: bandit -q -r src
       - run: pip-audit
+      - run: python -m build
+      - run: python -m twine check dist/*.whl dist/*.tar.gz
+      - run: python scripts/validate_package.py
+      - run: >
+          python scripts/installed_package_smoke.py
+          dist/tooltether-0.1.0-py3-none-any.whl
+          --examples
+          examples/basic_usage.py
+          examples/typed_tool.py
+          examples/async_usage.py
+          examples/execution_policy.py
+      - run: python scripts/installed_package_smoke.py dist/tooltether-0.1.0.tar.gz
   test:
     strategy:
       fail-fast: false
@@ -35,4 +45,3 @@ jobs:
         with: {python-version: "${{ matrix.python }}"}
       - run: python -m pip install -e ".[dev]"
       - run: python -m pytest -q
-

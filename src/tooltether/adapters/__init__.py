@@ -5,7 +5,7 @@ from __future__ import annotations
 from ..registry import AdapterRegistry
 from .anthropic import AnthropicAdapter
 from .autogen import AutoGenAdapter
-from .base import AdapterCapabilities, BaseAdapter
+from .base import AdapterCapabilities, AdapterInfo, AdapterMaturity, BaseAdapter
 from .crewai import CrewAIAdapter
 from .langchain import LangChainAdapter
 from .mcp import MCPAdapter
@@ -27,6 +27,8 @@ for _name, _adapter in (
 
 __all__ = [
     "AdapterCapabilities",
+    "AdapterInfo",
+    "AdapterMaturity",
     "BaseAdapter",
     "adapter_registry",
 ]

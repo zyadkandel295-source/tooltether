@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from enum import StrEnum
 from typing import Any, cast
 
 from pydantic import BaseModel
@@ -19,12 +20,30 @@ class AdapterCapabilities(SerializableModel):
     strict_schema: bool = True
 
 
+class AdapterMaturity(StrEnum):
+    STABLE = "stable"
+    BETA = "beta"
+    EXPERIMENTAL = "experimental"
+
+
+class AdapterInfo(SerializableModel):
+    name: str
+    framework: str
+    supported_versions: str
+    maturity: AdapterMaturity
+    recommended: bool
+    capabilities: AdapterCapabilities
+    limitations: tuple[str, ...] = ()
+
+
 class BaseAdapter(ABC):
     adapter_name = "base"
     adapter_version = "1"
     framework_name = "framework-neutral"
     supported_framework_versions = "n/a"
-    stability = "stable"
+    maturity = AdapterMaturity.STABLE
+    limitations: tuple[str, ...] = ()
+    recommended = True
 
     @abstractmethod
     def export_tool(self, tool: Any, runtime: Any | None = None) -> Any:
@@ -44,6 +63,17 @@ class BaseAdapter(ABC):
 
     def capabilities(self) -> AdapterCapabilities:
         return AdapterCapabilities()
+
+    def info(self) -> AdapterInfo:
+        return AdapterInfo(
+            name=self.adapter_name,
+            framework=self.framework_name,
+            supported_versions=self.supported_framework_versions,
+            maturity=self.maturity,
+            recommended=self.recommended,
+            capabilities=self.capabilities(),
+            limitations=self.limitations,
+        )
 
     def compatibility_check(self) -> tuple[bool, str]:
         return True, self.supported_framework_versions

@@ -3,6 +3,7 @@
 from .constants import PROJECT_VERSION as __version__
 from .errors import (
     AdapterError,
+    ExecutionPolicyError,
     MissingExtraError,
     StorageError,
     ToolApprovalError,
@@ -25,6 +26,8 @@ from .models import (
     ExecutionContext,
     ExecutionEnvironment,
     ExecutionIdentity,
+    ExecutionMode,
+    ExecutionPolicy,
     FeedbackRecord,
     ModelCandidate,
     ModelSelection,
@@ -76,6 +79,9 @@ __all__ = [
     "ExecutionContext",
     "ExecutionEnvironment",
     "ExecutionIdentity",
+    "ExecutionMode",
+    "ExecutionPolicy",
+    "ExecutionPolicyError",
     "FeedbackRecord",
     "FeedbackStore",
     "MissingExtraError",

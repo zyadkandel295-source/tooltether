@@ -72,6 +72,11 @@ class Outcome(StrEnum):
     DENIED = "denied"
 
 
+class ExecutionMode(StrEnum):
+    TRUSTED = "trusted"
+    RESTRICTED = "restricted"
+
+
 class ToolCapabilities(SerializableModel):
     capabilities: frozenset[str] = frozenset()
     resources: dict[str, tuple[str, ...]] = Field(default_factory=dict)
@@ -143,6 +148,28 @@ class OptimizationPolicy(SerializableModel):
     timeout_margin: float = Field(default=1.25, ge=1)
     min_timeout: float = Field(default=0.05, gt=0)
     max_timeout: float = Field(default=300, gt=0)
+
+
+class ExecutionPolicy(SerializableModel):
+    """Runtime execution boundary.
+
+    `trusted` preserves ToolTether's historical local-first behavior. `restricted`
+    is a fail-closed policy gate for host applications that want ToolTether to reject
+    tools with side effects, external access, high risk, or raw callable definitions
+    unless those allowances are explicitly enabled.
+
+    This is not an operating-system, process, container, VM, or network sandbox.
+    Untrusted Python code still requires isolation outside this process.
+    """
+
+    mode: ExecutionMode = ExecutionMode.TRUSTED
+    allow_raw_callables: bool = True
+    allow_write_side_effects: bool = False
+    allow_external_access: bool = False
+    allow_filesystem_access: bool = False
+    allow_database_access: bool = False
+    allow_required_secrets: bool = False
+    allow_high_risk: bool = False
 
 
 class ToolMetadata(SerializableModel):
@@ -416,6 +443,7 @@ class RuntimeConfig(SerializableModel):
     default_timeout: TimeoutPolicy = Field(default_factory=TimeoutPolicy)
     hard_max_timeout: float = Field(default=300.0, gt=0)
     strict_validation: bool = True
+    execution_policy: ExecutionPolicy = Field(default_factory=ExecutionPolicy)
     deny_undeclared_dangerous: bool = True
     log_payloads: bool = False
     audit_hash_chain: bool = True

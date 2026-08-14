@@ -1,6 +1,6 @@
 # Release process
 
-This project is prepared as `tooltether` version `0.1.0` for an alpha PyPI release. This checklist reflects the repository state as of 2026-08-14.
+This project is prepared as `tooltether` version `0.1.0` for an alpha PyPI release. This checklist reflects the repository state as of 2026-08-15.
 
 ## Current verified state
 
@@ -8,11 +8,12 @@ This project is prepared as `tooltether` version `0.1.0` for an alpha PyPI relea
 |---|---|---|
 | Package metadata | Complete | `pyproject.toml` includes name, version, license expression, Python classifiers, keywords, project URLs, and explicit optional extras |
 | PyPI name check | Complete | `https://pypi.org/pypi/tooltether/json` returned HTTP `404` on 2026-08-14 |
-| Local tests | Complete | Current local suite is `76 passed`; coverage gate reaches at least `90%` |
+| Local tests | Complete | Current local suite is `97 passed`; coverage gate reaches at least `90%` |
 | Static analysis | Complete | Ruff and mypy pass locally |
 | Documentation build | Complete locally | `mkdocs build --strict` passed |
 | Packaging | Complete locally | `python -m build` produced wheel and sdist; `twine check dist/*.whl dist/*.tar.gz` passed |
-| Clean install smoke | Complete locally | Final wheel installed in `.venv-wheel`; import, CLI `version`, runtime execution, and OpenAI schema export passed |
+| Package contents | Complete locally | `scripts/validate_package.py` checks wheel/sdist metadata, expected files, `py.typed`, and excluded development junk |
+| Clean install smoke | Complete locally | Final wheel and sdist are installed in fresh environments outside the repository and exercised through public API examples |
 | Security checks | Complete locally | `bandit -q -r src` passed; live `pip-audit` returned no known vulnerabilities after upgrading the local dev-environment `cryptography` package to `50.0.0` |
 | Artifact hashes | Complete locally | Final SHA-256 values were generated after the latest source-controlled edits and should be copied into GitHub Release notes at release time |
 | Publication authorization | Pending | Do not publish without explicit repository-owner approval |
@@ -32,11 +33,20 @@ python -m pip check
 pip-audit
 python -m build
 python -m twine check dist/*.whl dist/*.tar.gz
+python scripts/validate_package.py
+python scripts/installed_package_smoke.py dist/tooltether-0.1.0-py3-none-any.whl
+python scripts/installed_package_smoke.py dist/tooltether-0.1.0.tar.gz
+```
+
+For the full local gate, prefer:
+
+```bash
+python scripts/release_check.py
 ```
 
 ## Latest live dependency audit
 
-Command run on 2026-08-14 from the local release virtual environment:
+Command run on 2026-08-15 from the local release virtual environment:
 
 ```text
 .\.venv\Scripts\pip-audit.exe
@@ -51,7 +61,7 @@ Name       Skip Reason
 tooltether Dependency not found on PyPI and could not be audited: tooltether (0.1.0)
 ```
 
-Earlier in the same pass, `pip-audit` reported `cryptography 49.0.0` with advisory `PYSEC-2026-3552`, fixed in `50.0.0`. The local release virtual environment was upgraded to `cryptography 50.0.0`, and the audit was rerun successfully with the result above.
+During the earlier 2026-08-14 publication-readiness pass, `pip-audit` reported `cryptography 49.0.0` with advisory `PYSEC-2026-3552`, fixed in `50.0.0`. The local release virtual environment was upgraded to `cryptography 50.0.0`, and the 2026-08-15 audit was rerun successfully with the result above.
 
 ## Release gating sequence
 
@@ -70,10 +80,11 @@ Earlier in the same pass, `pip-audit` reported `cryptography 49.0.0` with adviso
 4. Run the full CI matrix for Python `3.11`, `3.12`, `3.13`, and `3.14` across Ubuntu, Windows, and macOS.
 5. Run optional compatibility workflow for public extras.
 6. Review experimental adapters and keep their README status as `Experimental` unless installed-SDK matrices justify stronger wording.
-7. Build final artifacts from the exact tagged source.
-8. Generate checksum notes for the wheel and sdist after the final build, but keep checksum files out of Twine upload/check globs.
-9. Publish through PyPI Trusted Publishing / OIDC only. Do not create or store a long-lived PyPI upload token.
-10. Verify the published package page, install path, hashes, and provenance from PyPI.
+7. Build final artifacts once from the exact tagged source.
+8. Validate those exact artifacts and run fresh wheel/sdist installed-package smoke tests outside the repository.
+9. Generate checksum notes for the wheel and sdist after the final build, but keep checksum files out of Twine upload/check globs.
+10. Publish those exact downloaded artifacts through PyPI Trusted Publishing / OIDC only. Do not create or store a long-lived PyPI upload token.
+11. Verify the published package page, install path, hashes, and provenance from PyPI.
 
 ## Artifact recording rule
 

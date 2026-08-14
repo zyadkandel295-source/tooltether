@@ -1,6 +1,6 @@
 # Compatibility matrix
 
-Verified on 2026-08-14 with local CPython 3.14.4 and 3.11.9 environments, plus GitHub Actions CI history for the supported Python/OS matrix.
+Verified on 2026-08-15 with local CPython 3.14.4 and 3.11.9 environments, plus GitHub Actions CI history for the supported Python/OS matrix.
 
 | Surface | Declared range | Verification | Status |
 |---|---|---|---|
@@ -15,3 +15,5 @@ Verified on 2026-08-14 with local CPython 3.14.4 and 3.11.9 environments, plus G
 | smolagents | >=1.24,<2 | boundary test | Experimental |
 
 The scheduled optional-compatibility workflow installs optional extras. Experimental adapters remain supported only at the ToolTether boundary until upstream APIs stabilize and installed-SDK matrices are consistently green.
+
+Adapter maturity is also exposed programmatically through `adapter_registry.get(name).info()`. Stable adapters are recommended for normal alpha users; beta adapters are usable with integration caution; experimental adapters are available for early feedback and may need faster follow-up changes as upstream APIs move.

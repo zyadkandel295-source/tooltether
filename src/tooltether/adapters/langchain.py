@@ -5,12 +5,17 @@ from __future__ import annotations
 from typing import Any
 
 from ..errors import MissingExtraError
-from .base import BaseAdapter
+from .base import AdapterMaturity, BaseAdapter
 
 
 class LangChainAdapter(BaseAdapter):
     framework_name = "LangChain / LangGraph"
     supported_framework_versions = "langchain-core >=1.1,<2"
+    maturity = AdapterMaturity.BETA
+    limitations = (
+        "Requires runtime= so sync and async handlers preserve ToolTether validation and policy.",
+        "LangGraph support is through LangChain StructuredTool compatibility.",
+    )
 
     def __init__(self, adapter_name: str = "langchain") -> None:
         self.adapter_name = adapter_name

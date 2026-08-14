@@ -13,6 +13,9 @@ class MCPAdapter(BaseAdapter):
     adapter_name = "mcp"
     framework_name = "Model Context Protocol"
     supported_framework_versions = "mcp >=1.25,<2"
+    limitations = (
+        "Transport authorization and process isolation are host-application responsibilities.",
+    )
 
     def export_tool(self, tool: Any, runtime: Any | None = None) -> dict[str, Any]:
         risk = tool.spec.risk

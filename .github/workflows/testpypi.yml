@@ -5,9 +5,8 @@ permissions:
   contents: read
   id-token: write
 jobs:
-  testpypi-publish:
+  build:
     runs-on: ubuntu-latest
-    environment: testpypi
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,8 +21,41 @@ jobs:
       - name: Build Distributions
         run: python -m build
       - name: Validate Package Metadata
-        run: python -m twine check dist/*
+        run: python -m twine check dist/*.whl dist/*.tar.gz
+      - name: Validate Package Contents
+        run: python scripts/validate_package.py
+      - name: Smoke Test Wheel
+        run: >
+          python scripts/installed_package_smoke.py
+          dist/tooltether-0.1.0-py3-none-any.whl
+          --examples
+          examples/basic_usage.py
+          examples/typed_tool.py
+          examples/async_usage.py
+          examples/execution_policy.py
+      - name: Smoke Test Sdist
+        run: python scripts/installed_package_smoke.py dist/tooltether-0.1.0.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: testpypi-packages
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+          if-no-files-found: error
+  testpypi-publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: testpypi-packages
+          path: dist
       - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          packages-dir: dist
           repository-url: https://test.pypi.org/legacy/

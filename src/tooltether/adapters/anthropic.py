@@ -12,6 +12,9 @@ class AnthropicAdapter(BaseAdapter):
     adapter_name = "anthropic"
     framework_name = "Anthropic Messages API"
     supported_framework_versions = "schema contract; SDK >=0.75 optional"
+    limitations = (
+        "Exports schema and maps tool-use blocks; no model loop or credentials in core.",
+    )
 
     def export_tool(self, tool: Any, runtime: Any | None = None) -> dict[str, Any]:
         return {

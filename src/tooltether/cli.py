@@ -98,6 +98,10 @@ def main(argv: list[str] | None = None) -> int:
                     "python": platform.python_version(),
                     "platform": platform.platform(),
                     "adapters": adapter_registry.names(),
+                    "adapter_info": {
+                        name: adapter_registry.get(name).info().to_dict()
+                        for name in adapter_registry.names()
+                    },
                 },
                 json_output,
             )

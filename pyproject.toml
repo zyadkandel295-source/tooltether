@@ -81,6 +81,7 @@ include = [
   "/RELEASE_CHECKLIST.md",
   "/ROADMAP.md",
   "/SECURITY.md",
+  "/scripts",
   "/src/tooltether",
   "/SUPPORT.md",
   "/tests",
@@ -96,6 +97,14 @@ exclude = [
   "/.venv/**",
   "/.venv-wheel",
   "/.venv-wheel/**",
+  "/.venv311",
+  "/.venv311/**",
+  "/.pytest_tmp*",
+  "/.tmp_*",
+  "/tmp-gha-*",
+  "/python-*.exe",
+  "/*.db",
+  "/*.html",
 ]
 
 [tool.pytest.ini_options]

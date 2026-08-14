@@ -14,6 +14,9 @@ class OpenAIAdapter(BaseAdapter):
     adapter_name = "openai"
     framework_name = "OpenAI API"
     supported_framework_versions = "schema contract; SDK >=2.8 optional"
+    limitations = (
+        "Exports schema and maps tool-call arguments/results; no model loop or credentials.",
+    )
 
     def export_tool(self, tool: Any, runtime: Any | None = None) -> dict[str, Any]:
         return {

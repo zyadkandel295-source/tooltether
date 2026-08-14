@@ -92,6 +92,10 @@ class UnsafeOperationError(ToolTetherError):
     code = "unsafe_operation"
 
 
+class ExecutionPolicyError(UnsafeOperationError):
+    code = "execution_policy_violation"
+
+
 class AdapterError(ToolTetherError):
     code = "adapter_error"
 

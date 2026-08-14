@@ -15,6 +15,7 @@ from typing import Any
 
 from .cache import MemoryCache
 from .errors import (
+    ExecutionPolicyError,
     StorageError,
     ToolApprovalError,
     ToolExecutionError,
@@ -31,6 +32,8 @@ from .models import (
     ExecutionContext,
     ExecutionEnvironment,
     ExecutionIdentity,
+    ExecutionMode,
+    ExecutionPolicy,
     Outcome,
     PermissionDecision,
     PermissionDecisionType,
@@ -109,10 +112,13 @@ class Runtime:
         approval_handler: ApprovalHandler | None = None,
         cache: MemoryCache | None = None,
         storage: SQLiteStorage | None = None,
+        execution_policy: ExecutionPolicy | None = None,
         hooks: tuple[RuntimeHook, ...] = (),
         middleware: tuple[RuntimeMiddleware, ...] = (),
     ) -> None:
         self.config = config or RuntimeConfig()
+        if execution_policy is not None:
+            self.config = self.config.model_copy(update={"execution_policy": execution_policy})
         self.policy = policy or Policy()
         self.approval_handler = approval_handler or NonInteractiveApprovalHandler()
         self.cache = cache or MemoryCache()
@@ -161,6 +167,7 @@ class Runtime:
         correlation_id: str | None = None,
         metadata: Mapping[str, Any] | None = None,
     ) -> ToolResult:
+        raw_callable = _is_raw_callable(candidate)
         tool = ensure_tool(candidate)
         execution_id = str(uuid.uuid4())
         effective_timeout = min(
@@ -188,6 +195,7 @@ class Runtime:
         failure: BaseException | None = None
         await self._emit("tool.call.started", context, {"tool_fingerprint": tool.fingerprint.value})
         try:
+            self._enforce_execution_policy(tool, context, raw_callable=raw_callable)
             try:
                 normalized = validate_input(
                     tool.input_model,
@@ -559,6 +567,7 @@ class Runtime:
         *,
         identity: ExecutionIdentity | None = None,
     ) -> AsyncIterator[Any]:
+        raw_callable = _is_raw_callable(candidate)
         tool = ensure_tool(candidate)
         if not tool.is_async_generator:
             yield (await self.arun(tool, arguments, identity=identity)).value
@@ -575,6 +584,7 @@ class Runtime:
             identity=identity or ExecutionIdentity(),
             environment=self.config.environment,
         )
+        self._enforce_execution_policy(tool, context, raw_callable=raw_callable)
         decision = self.policy.evaluate(tool, context)
         if decision.decision == PermissionDecisionType.DENY:
             raise ToolPermissionError(f"Policy denied '{tool.name}': {decision.explain()}")
@@ -619,6 +629,89 @@ class Runtime:
     async def close(self) -> None:
         await self.storage.close()
 
+    def _enforce_execution_policy(
+        self, tool: Tool[..., Any], context: ExecutionContext, *, raw_callable: bool
+    ) -> None:
+        execution_policy = self.config.execution_policy
+        if execution_policy.mode == ExecutionMode.TRUSTED:
+            return
+        if raw_callable and not execution_policy.allow_raw_callables:
+            raise _execution_policy_error(
+                tool,
+                context,
+                "restricted_raw_callable",
+                "Restricted execution requires an explicit Tool or BaseTool definition",
+            )
+        risk = tool.spec.risk
+        capabilities = tool.spec.capabilities
+        side_effects = risk.side_effects
+        if (
+            side_effects in {"write", "destructive", "financial"}
+            and not execution_policy.allow_write_side_effects
+        ):
+            raise _execution_policy_error(
+                tool,
+                context,
+                "restricted_side_effects",
+                f"Restricted execution rejected side effects: {side_effects}",
+            )
+        if risk.destructive and not execution_policy.allow_write_side_effects:
+            raise _execution_policy_error(
+                tool,
+                context,
+                "restricted_destructive",
+                "Restricted execution rejected a destructive tool",
+            )
+        if risk.irreversible and not execution_policy.allow_write_side_effects:
+            raise _execution_policy_error(
+                tool,
+                context,
+                "restricted_irreversible",
+                "Restricted execution rejected an irreversible tool",
+            )
+        if side_effects == "external" and not execution_policy.allow_external_access:
+            raise _execution_policy_error(
+                tool,
+                context,
+                "restricted_external_side_effect",
+                "Restricted execution rejected external side effects",
+            )
+        if capabilities.external_access and not execution_policy.allow_external_access:
+            raise _execution_policy_error(
+                tool,
+                context,
+                "restricted_external_access",
+                "Restricted execution rejected external access",
+            )
+        if capabilities.filesystem_access and not execution_policy.allow_filesystem_access:
+            raise _execution_policy_error(
+                tool,
+                context,
+                "restricted_filesystem_access",
+                "Restricted execution rejected filesystem access",
+            )
+        if capabilities.database_access and not execution_policy.allow_database_access:
+            raise _execution_policy_error(
+                tool,
+                context,
+                "restricted_database_access",
+                "Restricted execution rejected database access",
+            )
+        if capabilities.required_secrets and not execution_policy.allow_required_secrets:
+            raise _execution_policy_error(
+                tool,
+                context,
+                "restricted_required_secrets",
+                "Restricted execution rejected a tool that requires secrets",
+            )
+        if risk.level in {"high", "critical"} and not execution_policy.allow_high_risk:
+            raise _execution_policy_error(
+                tool,
+                context,
+                "restricted_high_risk",
+                f"Restricted execution rejected risk level: {risk.level}",
+            )
+
     async def __aenter__(self) -> Runtime:
         return self
 
@@ -632,6 +725,22 @@ def _argument(arguments: Mapping[str, Any], *names: str) -> str | None:
         if isinstance(value, str):
             return value
     return None
+
+
+def _is_raw_callable(candidate: object) -> bool:
+    return callable(candidate) and not isinstance(candidate, (Tool, BaseTool))
+
+
+def _execution_policy_error(
+    tool: Tool[..., Any], context: ExecutionContext, reason_code: str, message: str
+) -> ExecutionPolicyError:
+    return ExecutionPolicyError(
+        message,
+        tool_name=tool.name,
+        tool_version=tool.version,
+        execution_id=context.execution_id,
+        safe_details={"reason_code": reason_code},
+    )
 
 
 def _failure_outcome(failure: BaseException | None) -> Outcome:

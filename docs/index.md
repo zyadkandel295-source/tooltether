@@ -41,6 +41,12 @@ The runtime validates input before policy and before side effects, resolves appr
 
 Rules match tool/version, capability, identity, workspace, environment, resource, hostname, method, side effect, risk, and tags. Deny wins equal-priority ties. `decision.explain()` identifies matched rules. Resource paths are resolved under the workspace and public-host checks reject direct private, loopback, link-local, metadata, multicast, and reserved IPs.
 
+## Execution policy
+
+`RuntimeConfig.execution_policy` and `Runtime(execution_policy=...)` make the execution boundary explicit. The default `trusted` mode preserves normal local-first behavior. `restricted` mode rejects raw callables and tools with write/destructive/financial side effects, external access, filesystem/database access, required secrets, or high/critical risk unless the host application explicitly enables that allowance.
+
+This is not a Python sandbox. It does not stop malicious code that is already running in the same process. Use a separate process, container, VM, operating-system controls, and network/file permissions for untrusted code.
+
 ## Approvals
 
 Approval is asynchronous. `NonInteractiveApprovalHandler` denies by default for server environments; applications can wrap their own handler with `CallableApprovalHandler`.
@@ -107,7 +113,7 @@ Register `tooltether.tools` or `tooltether.adapters` entry points. Loading is al
 
 ## Adapter development
 
-Subclass `BaseAdapter`; report framework/version/stability, export a canonical tool, and ensure every execution path calls `Runtime.arun` or `Runtime.run`.
+Subclass `BaseAdapter`; report framework/version/maturity, capabilities, recommendation status, and limitations. Export a canonical tool and ensure every execution path calls `Runtime.arun` or `Runtime.run`.
 
 ## Security and privacy model
 
@@ -139,4 +145,3 @@ See `CONTRIBUTING.md` and `docs/release.md`. Documentation examples are exercise
 ## API reference
 
 See [api.md](api.md) and package-root `__all__` for the supported public API.
-

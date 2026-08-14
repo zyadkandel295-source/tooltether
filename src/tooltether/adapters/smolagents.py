@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..errors import MissingExtraError
-from .base import AdapterCapabilities, BaseAdapter
+from .base import AdapterCapabilities, AdapterMaturity, BaseAdapter
 
 _JSON_TO_SMOL = {
     "string": "string",
@@ -21,7 +21,9 @@ class SmolagentsAdapter(BaseAdapter):
     adapter_name = "smolagents"
     framework_name = "Hugging Face smolagents"
     supported_framework_versions = "smolagents >=1.24,<2"
-    stability = "experimental"
+    maturity = AdapterMaturity.EXPERIMENTAL
+    recommended = False
+    limitations = ("Exports a sync forward method; smolagents code-agent sandboxing is external.",)
 
     def export_tool(self, tool: Any, runtime: Any | None = None) -> Any:
         if runtime is None:

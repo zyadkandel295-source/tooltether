@@ -70,6 +70,29 @@ policy.require_approval(tool="send_email", rule_id="approve-email")
 runtime = Runtime(policy=policy, approval_handler=NonInteractiveApprovalHandler(allow=False))
 ```
 
+## Execution policy
+
+Use `ExecutionPolicy` to make trusted local execution versus restricted execution explicit. Restricted mode is a fail-closed in-process policy gate; it is not an OS sandbox.
+
+```python
+from tooltether import ExecutionMode, ExecutionPolicy, ExecutionPolicyError, Runtime, tool
+
+
+@tool(side_effects="write", permissions=["records:write"])
+def write_record() -> str:
+    """Pretend to mutate an external record."""
+    return "written"
+
+
+runtime = Runtime(execution_policy=ExecutionPolicy(mode=ExecutionMode.RESTRICTED))
+try:
+    runtime.run(write_record, {})
+except ExecutionPolicyError:
+    print("restricted policy rejected write-like execution")
+```
+
+Safe read-only tools continue to run in restricted mode. Side-effecting, external-access, secret-requiring, high-risk, or raw callable execution must be explicitly allowed by the host application.
+
 ## Explainable optimization
 
 ```python
@@ -82,16 +105,16 @@ The default mode is `recommend`. Automatic changes are bounded, fingerprint-scop
 
 ## Supported integrations
 
-| Integration | Status | Current contract test | Limitation |
-|---|---|---:|---|
-| Python sync/async | Stable core | Pass | Sync work uses a worker thread in async execution |
-| OpenAI tool schema/call mapping | Stable schema | Pass | No model loop or credentials in core |
-| Anthropic client-tool schema/mapping | Stable schema | Pass | No model loop or credentials in core |
-| MCP export/runtime server | Stable optional | MCP 1.28.1 smoke pass | Transport authorization is host-owned |
-| LangChain / LangGraph | Stable optional | langchain-core 1.4.9 sync/async pass | LangGraph use is via LangChain tools |
-| CrewAI | Experimental | Contract pass | Upstream custom-tool API may change |
-| AutoGen | Experimental | Contract pass | Cancellation mapping depends on caller integration |
-| smolagents | Experimental | Contract pass | Sync `forward`; process sandboxing remains external |
+| Integration | Maturity | Recommended for alpha users | Current contract test | Limitation |
+|---|---|---|---:|---|
+| Python sync/async | Stable core | Yes | Pass | Sync work uses a worker thread in async execution |
+| OpenAI tool schema/call mapping | Stable schema | Yes | Pass | No model loop or credentials in core |
+| Anthropic client-tool schema/mapping | Stable schema | Yes | Pass | No model loop or credentials in core |
+| MCP export/runtime server | Stable optional | Yes, when MCP extra is installed | MCP smoke pass | Transport authorization is host-owned |
+| LangChain / LangGraph | Beta optional | Yes, with normal adapter caution | langchain-core sync/async pass | LangGraph use is via LangChain tools |
+| CrewAI | Experimental | Not by default | Contract pass | Upstream custom-tool API may change |
+| AutoGen | Experimental | Not by default | Contract pass | Cancellation mapping depends on caller integration |
+| smolagents | Experimental | Not by default | Contract pass | Sync `forward`; process sandboxing remains external |
 
 "Contract pass" means the adapter boundary is exercised without paid services. It does not claim live provider or all-version compatibility.
 
@@ -128,6 +151,7 @@ Run the official benchmark suite:
 
 ```bash
 python benchmarks/runtime_overhead.py
+python benchmarks/release_smoke.py
 python benchmarks/payload_scaling.py
 python benchmarks/concurrency.py
 python benchmarks/sustained_load.py
@@ -146,6 +170,8 @@ ruff format --check .
 mypy src
 python -m build
 python -m twine check dist/*.whl dist/*.tar.gz
+python scripts/validate_package.py
+python scripts/installed_package_smoke.py dist/tooltether-0.1.0-py3-none-any.whl
 ```
 
-The roadmap prioritizes real installed-SDK compatibility matrices, distributed backends, and deeper policy property tests. See [ROADMAP.md](ROADMAP.md).
+For the full local release gate, run `python scripts/release_check.py`. The roadmap prioritizes real installed-SDK compatibility matrices, distributed backends, and deeper policy property tests. See [ROADMAP.md](ROADMAP.md).

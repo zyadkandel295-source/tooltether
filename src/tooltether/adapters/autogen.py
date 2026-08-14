@@ -5,14 +5,16 @@ from __future__ import annotations
 from typing import Any
 
 from ..errors import MissingExtraError
-from .base import BaseAdapter
+from .base import AdapterMaturity, BaseAdapter
 
 
 class AutoGenAdapter(BaseAdapter):
     adapter_name = "autogen"
     framework_name = "Microsoft AutoGen"
     supported_framework_versions = "autogen-core >=0.7,<1"
-    stability = "experimental"
+    maturity = AdapterMaturity.EXPERIMENTAL
+    recommended = False
+    limitations = ("Cancellation and lifecycle behavior depend on the caller integration.",)
 
     def export_tool(self, tool: Any, runtime: Any | None = None) -> Any:
         if runtime is None:
