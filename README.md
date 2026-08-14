@@ -17,7 +17,7 @@ pip install "tooltether[mcp]"        # optional official MCP SDK
 pip install "tooltether[langchain]"  # optional LangChain adapter
 ```
 
-The name is a working pre-publication name. PyPI and GitHub searches found no exact collision on 2026-07-17, but repository-owner and legal confirmation are still required.
+The first public alpha is packaged as `tooltether`. Confirm repository-owner approval before publishing a release.
 
 ## Five-minute quickstart
 

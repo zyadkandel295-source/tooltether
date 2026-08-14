@@ -1,56 +1,79 @@
 # Release process
 
-This project is currently prepared as `tooltether` version `0.1.0` for an alpha release. The steps below are tailored to the current repository state as of July 18, 2026.
+This project is prepared as `tooltether` version `0.1.0` for an alpha PyPI release. This checklist reflects the repository state as of 2026-08-14.
 
 ## Current verified state
 
 | Area | Status | Notes |
 |---|---|---|
-| Local tests | Complete | `68 passed` with `90.52%` coverage |
-| Static analysis | Complete | Ruff, mypy, and Bandit passed |
-| Documentation build | Complete | `mkdocs build --strict` passed |
-| Packaging | Complete | Wheel and sdist built, `twine check` passed |
-| Clean install smoke | Complete | Wheel installed in `.venv-wheel`; import, CLI, and OpenAI export smoke passed |
-| Artifact hashes | Complete | Final hashes should be recorded immediately after each release build in `dist/SHA256SUMS` and the GitHub Release notes |
-| Live dependency audit | Complete with finding | `pip-audit --local --cache-dir .pip-audit-cache` found four advisories on local dev-environment `pip 26.0.1`; fixes available in `26.1` and `26.1.2` |
-| Final owner/repository metadata | Pending | Public URLs and maintainer-controlled contacts still need final values |
-| Cross-version/extras execution | Pending | Declared support is Python `3.11-3.14`, but only `3.14.4` was executed locally |
-| Publication authorization | Pending | No public release should occur without repository-owner approval |
+| Package metadata | Complete | `pyproject.toml` includes name, version, license expression, Python classifiers, keywords, project URLs, and explicit optional extras |
+| PyPI name check | Complete | `https://pypi.org/pypi/tooltether/json` returned HTTP `404` on 2026-08-14 |
+| Local tests | Complete | Current local suite is `76 passed`; coverage gate reaches at least `90%` |
+| Static analysis | Complete | Ruff and mypy pass locally |
+| Documentation build | Complete locally | `mkdocs build --strict` passed |
+| Packaging | Complete locally | `python -m build` produced wheel and sdist; `twine check dist/*` passed |
+| Clean install smoke | Complete locally | Final wheel installed in `.venv-wheel`; import, CLI `version`, runtime execution, and OpenAI schema export passed |
+| Security checks | Complete locally | `bandit -q -r src` passed; live `pip-audit` returned no known vulnerabilities after upgrading the local dev-environment `cryptography` package to `50.0.0` |
+| Artifact hashes | Complete locally | Final SHA-256 values were generated after the latest source-controlled edits and should be copied into GitHub Release notes at release time |
+| Publication authorization | Pending | Do not publish without explicit repository-owner approval |
 
-## Final local evidence
+## Final local evidence commands
 
-- `pytest --cov=src/tooltether --cov-report=term-missing`
-- `ruff check .`
-- `ruff format --check .`
-- `mypy src`
-- `mkdocs build --strict`
-- `bandit -q -r src`
-- `python -m pip check`
-- `pip-audit --local --cache-dir .pip-audit-cache`
-- `python -m build --no-isolation`
-- `twine check dist/*`
+Run these from a clean checkout immediately before creating a release tag:
+
+```bash
+ruff format --check .
+ruff check .
+mypy src
+python -m pytest --cov=tooltether
+mkdocs build --strict
+bandit -q -r src
+python -m pip check
+pip-audit
+python -m build
+python -m twine check dist/*
+```
+
+## Latest live dependency audit
+
+Command run on 2026-08-14 from the local release virtual environment:
+
+```text
+.\.venv\Scripts\pip-audit.exe
+```
+
+Exact final result:
+
+```text
+No known vulnerabilities found
+Name       Skip Reason
+---------- -------------------------------------------------------------------------
+tooltether Dependency not found on PyPI and could not be audited: tooltether (0.1.0)
+```
+
+Earlier in the same pass, `pip-audit` reported `cryptography 49.0.0` with advisory `PYSEC-2026-3552`, fixed in `50.0.0`. The local release virtual environment was upgraded to `cryptography 50.0.0`, and the audit was rerun successfully with the result above.
 
 ## Release gating sequence
 
-1. Confirm that `ToolTether` / `tooltether` is the final public name and that the repository owner accepts the naming and legal risk.
-2. Set final repository metadata:
-   - add `[project.urls]` values in `pyproject.toml`
-   - confirm `NOTICE`, `LICENSE`, `CITATION.cff`, `SECURITY.md`, and `CODE_OF_CONDUCT.md`
-   - ensure the public repository and release channel exist before linking them
-3. Resolve or accept the current live dependency-audit finding before release. Current result:
-   - audited environment: local development `.venv`
-   - vulnerable package: `pip 26.0.1`
-   - advisories: `PYSEC-2026-196` twice, `PYSEC-2026-2875`, `PYSEC-2026-2876`
-   - fixed versions reported by PyPI: `26.1` and `26.1.2`
-   - impact scope: development environment tooling, not the published `tooltether` runtime dependency set
-4. Execute the GitHub Actions compatibility matrix for:
-   - Python `3.11`, `3.12`, `3.13`, `3.14`
-   - optional adapter extras that are intended to be supported publicly
-5. Review all experimental adapters and decide whether their extras should ship in the first public alpha unchanged or be deferred.
-6. Update the changelog and version if the owner wants a release number other than `0.1.0`.
-7. Create a protected `v*` tag and require release-environment approval.
-8. Publish using PyPI Trusted Publishing / OIDC only; do not create or store a long-lived upload token.
-9. Verify the published artifacts, hashes, provenance, and install path from PyPI.
+1. Confirm repository-owner approval for publishing `tooltether` version `0.1.0`.
+2. Confirm GitHub repository settings:
+   - Actions enabled.
+   - Branch protection or release-review process enabled for `main`.
+   - Private vulnerability reporting enabled, or another private security contact documented.
+   - Release and TestPyPI environments configured for Trusted Publishing.
+3. Confirm PyPI / TestPyPI Trusted Publisher configuration:
+   - Owner: `zyadkandel295-source`
+   - Repository: `tooltether`
+   - Workflow: `.github/workflows/release.yml` for PyPI
+   - Workflow: `.github/workflows/testpypi.yml` for TestPyPI
+   - Environment names: `release` and `testpypi`
+4. Run the full CI matrix for Python `3.11`, `3.12`, `3.13`, and `3.14` across Ubuntu, Windows, and macOS.
+5. Run optional compatibility workflow for public extras.
+6. Review experimental adapters and keep their README status as `Experimental` unless installed-SDK matrices justify stronger wording.
+7. Build final artifacts from the exact tagged source.
+8. Generate `dist/SHA256SUMS` and include those hashes in the GitHub Release notes.
+9. Publish through PyPI Trusted Publishing / OIDC only. Do not create or store a long-lived PyPI upload token.
+10. Verify the published package page, install path, hashes, and provenance from PyPI.
 
 ## Artifact recording rule
 
@@ -62,9 +85,9 @@ Record wheel and sdist SHA-256 values only after the final build is complete, an
 
 Do not treat hashes embedded in source-controlled documentation as authoritative for the final sdist, because the sdist contains that documentation and the value becomes self-invalidating.
 
-## Known pre-publication constraints
+## Known alpha constraints
 
-- The project is honest alpha software, not yet a proven multi-version release.
+- ToolTether is honest alpha software.
 - CrewAI, AutoGen, and smolagents adapters remain experimental.
 - The core runtime does not sandbox arbitrary Python execution.
-- The approved live dependency audit found four known vulnerabilities in local dev-environment `pip 26.0.1`; this should be remediated or consciously accepted before public release.
+- Transport authorization, provider credentials, process isolation, and remote service permissions remain host-application responsibilities.

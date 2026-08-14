@@ -1,8 +1,10 @@
 .venv/
+.venv-wheel/
 .venv311/
+.pip-audit-cache/
 .tmp_*/
 .tools/
-.pytest_tmp/
+.pytest_tmp*/
 .tooltether/
 dist/
 build/

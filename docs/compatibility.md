@@ -1,17 +1,17 @@
 # Compatibility matrix
 
-Verified on 2026-07-17 with CPython 3.14.4 in the local workspace.
+Verified on 2026-08-14 with local CPython 3.14.4 and 3.11.9 environments, plus GitHub Actions CI history for the supported Python/OS matrix.
 
 | Surface | Declared range | Verification | Status |
 |---|---|---|---|
-| Python | 3.11–3.14 | 3.14.4: full suite | Supported range pending CI matrix |
+| Python | 3.11-3.14 | Local 3.11.9 and 3.14.4 suites; CI matrix for Ubuntu, Windows, and macOS | Pass |
 | Pydantic | >=2.12,<3 | 2.13.4 | Pass |
 | OpenAI schema | current function tool shape | contract tests | Pass |
 | Anthropic schema | current client-tool shape | contract tests | Pass |
-| MCP Python SDK | >=1.25,<2 | 1.28.1 installed server/schema smoke | Pass |
-| langchain-core | >=1.1,<2 | 1.4.9 sync/async StructuredTool smoke | Pass |
+| MCP Python SDK | >=1.25,<2 | installed server/schema smoke | Pass |
+| langchain-core | >=1.1,<2 | sync/async StructuredTool smoke | Pass |
 | CrewAI | >=1.7,<2 | boundary test | Experimental |
 | autogen-core | >=0.7,<1 | boundary test | Experimental |
 | smolagents | >=1.24,<2 | boundary test | Experimental |
 
-The scheduled compatibility workflow installs optional extras and must pass before a release may upgrade “boundary test” to a tested SDK version.
+The scheduled optional-compatibility workflow installs optional extras. Experimental adapters remain supported only at the ToolTether boundary until upstream APIs stabilize and installed-SDK matrices are consistently green.

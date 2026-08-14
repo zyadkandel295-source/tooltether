@@ -116,6 +116,18 @@ exclude_also = ["if TYPE_CHECKING:", "@overload"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = [
+  ".pip-audit-cache",
+  ".pytest_tmp*",
+  ".tmp_*",
+  ".tools",
+  ".venv",
+  ".venv-wheel",
+  ".venv311",
+  "build",
+  "dist",
+  "site",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC", "S", "SIM", "RUF"]
