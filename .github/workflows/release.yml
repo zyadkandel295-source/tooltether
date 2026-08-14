@@ -12,8 +12,8 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with: {python-version: "3.14"}
       - run: python -m pip install -e ".[dev]"
       - run: python -m pytest --cov=tooltether
@@ -33,7 +33,8 @@ jobs:
           examples/execution_policy.py
       - run: python scripts/installed_package_smoke.py dist/tooltether-0.1.0.tar.gz
       - run: sha256sum dist/*.whl dist/*.tar.gz > SHA256SUMS
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v4
+        if: ${{ github.repository_visibility == 'public' }}
         with:
           subject-path: |
             dist/*.whl
