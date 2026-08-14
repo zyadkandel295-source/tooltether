@@ -11,7 +11,7 @@ This project is prepared as `tooltether` version `0.1.0` for an alpha PyPI relea
 | Local tests | Complete | Current local suite is `76 passed`; coverage gate reaches at least `90%` |
 | Static analysis | Complete | Ruff and mypy pass locally |
 | Documentation build | Complete locally | `mkdocs build --strict` passed |
-| Packaging | Complete locally | `python -m build` produced wheel and sdist; `twine check dist/*` passed |
+| Packaging | Complete locally | `python -m build` produced wheel and sdist; `twine check dist/*.whl dist/*.tar.gz` passed |
 | Clean install smoke | Complete locally | Final wheel installed in `.venv-wheel`; import, CLI `version`, runtime execution, and OpenAI schema export passed |
 | Security checks | Complete locally | `bandit -q -r src` passed; live `pip-audit` returned no known vulnerabilities after upgrading the local dev-environment `cryptography` package to `50.0.0` |
 | Artifact hashes | Complete locally | Final SHA-256 values were generated after the latest source-controlled edits and should be copied into GitHub Release notes at release time |
@@ -31,7 +31,7 @@ bandit -q -r src
 python -m pip check
 pip-audit
 python -m build
-python -m twine check dist/*
+python -m twine check dist/*.whl dist/*.tar.gz
 ```
 
 ## Latest live dependency audit
@@ -71,7 +71,7 @@ Earlier in the same pass, `pip-audit` reported `cryptography 49.0.0` with adviso
 5. Run optional compatibility workflow for public extras.
 6. Review experimental adapters and keep their README status as `Experimental` unless installed-SDK matrices justify stronger wording.
 7. Build final artifacts from the exact tagged source.
-8. Generate `dist/SHA256SUMS` and include those hashes in the GitHub Release notes.
+8. Generate checksum notes for the wheel and sdist after the final build, but keep checksum files out of Twine upload/check globs.
 9. Publish through PyPI Trusted Publishing / OIDC only. Do not create or store a long-lived PyPI upload token.
 10. Verify the published package page, install path, hashes, and provenance from PyPI.
 
@@ -79,7 +79,7 @@ Earlier in the same pass, `pip-audit` reported `cryptography 49.0.0` with adviso
 
 Record wheel and sdist SHA-256 values only after the final build is complete, and store them outside the source tree in:
 
-- `dist/SHA256SUMS`
+- local checksum notes, for example `dist/SHA256SUMS`
 - the GitHub Release notes
 - any signed provenance or attestation output
 

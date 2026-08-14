@@ -13,7 +13,7 @@ Status reflects the current workspace state as of 2026-08-14.
 - [x] Current local test suite passes with coverage above the configured `90%` gate.
 - [x] Ruff and mypy pass locally.
 - [x] Live `pip-audit` final result on 2026-08-14: `No known vulnerabilities found`; expected skip note remains because `tooltether 0.1.0` is not on PyPI yet.
-- [x] `mkdocs build --strict`, `python -m build`, and `python -m twine check dist/*` pass locally.
+- [x] `mkdocs build --strict`, `python -m build`, and `python -m twine check dist/*.whl dist/*.tar.gz` pass locally.
 - [x] Final wheel installs in a fresh environment and passes import, CLI, runtime, and OpenAI export smoke checks.
 - [x] Final wheel and sdist SHA-256 hashes were generated after the latest source edits.
 - [x] Tracked `.pip-audit-cache` artifacts are scheduled for removal from version control.
@@ -36,9 +36,9 @@ Status reflects the current workspace state as of 2026-08-14.
   - `python -m pip check`
   - `pip-audit`
   - `python -m build`
-  - `python -m twine check dist/*`
+  - `python -m twine check dist/*.whl dist/*.tar.gz`
 - [ ] Install the final wheel in a fresh environment and smoke-test import, CLI, and adapter export.
-- [ ] Regenerate `dist/SHA256SUMS` from the final tagged release build.
+- [ ] Regenerate checksum notes from the final tagged release build.
 - [ ] Copy the exact final wheel and sdist hashes into the GitHub Release notes.
 - [ ] Verify published artifacts, hashes, provenance, and install path after PyPI upload.
 

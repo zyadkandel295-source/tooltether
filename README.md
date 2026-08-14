@@ -145,7 +145,7 @@ ruff check .
 ruff format --check .
 mypy src
 python -m build
-python -m twine check dist/*
+python -m twine check dist/*.whl dist/*.tar.gz
 ```
 
 The roadmap prioritizes real installed-SDK compatibility matrices, distributed backends, and deeper policy property tests. See [ROADMAP.md](ROADMAP.md).
