@@ -35,7 +35,7 @@ jobs:
           examples/execution_policy.py
       - name: Smoke Test Sdist
         run: python scripts/installed_package_smoke.py dist/tooltether-0.1.0.tar.gz
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: testpypi-packages
           path: |
